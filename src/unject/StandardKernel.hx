@@ -22,17 +22,15 @@ typedef ClassType = Class<Dynamic>;
 
 class StandardKernel implements IKernel
 {
-	var bindings : Hash<ClassType>;
+	var providers : Hash<Provider<Dynamic>>;
 	var scopes : Hash<Scope>;
 	var singletons : Hash<Dynamic>;
 	//var modules : Array<IUnjectModule>;
 	var constructors : Hash<List<BindingArgument>>;
-	var providers : Hash<Provider<Dynamic>>;
 	var parameters : Hash<Hash<Dynamic>>;
 
 	public function new(modules : Array<Dynamic>)
 	{
-		this.bindings = new Hash<ClassType>();
 		this.scopes = new Hash<Scope>();
 		this.singletons = new Hash<Dynamic>();
 		//this.modules = new Array<IUnjectModule>();
@@ -61,21 +59,14 @@ class StandardKernel implements IKernel
 
 	public function get<T>(type : Class<T>) : T
 	{
-		/*
-		var typeName = Type.getClassName(type);
-		if (!bindings.exists(typeName))
-			throw typeName + " has not been bound to any class.";
-		*/
-
 		return internalGet(type);
 	}
 
 	function internalGet<T>(type : Class<T>) : T
 	{
 		var typeName = Type.getClassName(type);
-		var binding = bindings.exists(typeName) ? bindings.get(typeName) : type;
+		var provider = providers.exists(typeName) ? providers.get(typeName) : new ConstructorProvider(typeName, type, createInstance);
 		var scope = scopes.exists(typeName) ? scopes.get(typeName) : Scope.transient;
-		var provider = providers.exists(typeName) ? providers.get(typeName) : new ConstructorProvider(typeName, binding, createInstance);
 
 		return switch(scope)
 		{
@@ -162,7 +153,7 @@ class StandardKernel implements IKernel
 	{
 		var typeName = Type.getClassName(type);
 
-		bindings.set(typeName, to);
+		providers.set(typeName, new ConstructorProvider(typeName, to, createInstance));
 	}
 
 	public function setParameter(type : Class<Dynamic>, name : String, value : Dynamic)
@@ -183,7 +174,7 @@ class StandardKernel implements IKernel
 
 	function createInstance<T>(typeName:String, binding:Class<T>):T
 	{
-		if (!bindings.exists(typeName) && Type.resolveClass(typeName) == null)
+		if (!providers.exists(typeName) && Type.resolveClass(typeName) == null)
 			throw typeName + " is an unbound interface and cannot be instantiated.";
 
 		try
