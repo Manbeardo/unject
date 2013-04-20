@@ -27,6 +27,7 @@ class StandardKernel implements IKernel
 	var singletons : Hash<Dynamic>;
 	//var modules : Array<IUnjectModule>;
 	var constructors : Hash<List<BindingArgument>>;
+	var providers : Hash<Provider<Dynamic>>;
 	var parameters : Hash<Hash<Dynamic>>;
 
 	public function new(modules : Array<Dynamic>)
@@ -36,6 +37,7 @@ class StandardKernel implements IKernel
 		this.singletons = new Hash<Dynamic>();
 		//this.modules = new Array<IUnjectModule>();
 		this.constructors = new Hash<List<BindingArgument>>();
+		this.providers = new Hash<Provider<Dynamic>>();
 		this.parameters = new Hash<Hash<Dynamic>>();
 
 		for (m in modules)
@@ -73,42 +75,16 @@ class StandardKernel implements IKernel
 		var typeName = Type.getClassName(type);
 		var binding = bindings.exists(typeName) ? bindings.get(typeName) : type;
 		var scope = scopes.exists(typeName) ? scopes.get(typeName) : Scope.transient;
-
-		var self = this;
-		var instance = function()
-		{
-			if (!self.bindings.exists(typeName) && Type.resolveClass(typeName) == null)
-				throw typeName + " is an unbound interface and cannot be instantiated.";
-
-			try
-			{
-				return Type.createInstance(binding, self.resolveConstructorParameters(binding));
-			}
-			catch (e : Dynamic)
-			{
-				if(!URtti.hasInfo(binding))
-					throw "Class " + typeName + " must implement haxe.rtti.Infos";
-				else
-				{
-					#if neko
-					return neko.Lib.rethrow(e);
-					#elseif php
-					return cast php.Lib.rethrow(e);
-					#else
-					throw e;
-					#end
-				}
-			}
-		};
+		var provider = providers.exists(typeName) ? providers.get(typeName) : new ConstructorProvider(typeName, binding, createInstance);
 
 		return switch(scope)
 		{
 			case transient:
-				instance();
+				provider.get();
 
 			case singleton:
 				if (!singletons.exists(typeName))
-					singletons.set(typeName, instance());
+					singletons.set(typeName, provider.get());
 
 				singletons.get(typeName);
 		}
@@ -203,5 +179,50 @@ class StandardKernel implements IKernel
 	public function setScope(type : Class<Dynamic>, scope : Scope)
 	{
 		scopes.set(Type.getClassName(type), scope);
+	}
+
+	function createInstance<T>(typeName:String, binding:Class<T>):T
+	{
+		if (!bindings.exists(typeName) && Type.resolveClass(typeName) == null)
+			throw typeName + " is an unbound interface and cannot be instantiated.";
+
+		try
+		{
+			return Type.createInstance(binding, resolveConstructorParameters(binding));
+		}
+		catch (e : Dynamic)
+		{
+			if(!URtti.hasInfo(binding))
+				throw "Class " + typeName + " must implement haxe.rtti.Infos";
+			else
+			{
+				#if neko
+				return neko.Lib.rethrow(e);
+				#elseif php
+				return cast php.Lib.rethrow(e);
+				#else
+				throw e;
+				#end
+			}
+		}
+	}
+}
+
+private class ConstructorProvider<T> implements Provider<T>
+{
+	var typeName:String;
+	var binding:Class<T>;
+	var createInstance:String->Class<T>->T;
+
+	public function new(typeName:String, binding:Class<T>, createInstance:String->Class<T>->T)
+	{
+		this.typeName = typeName;
+		this.binding = binding;
+		this.createInstance = createInstance;
+	}
+
+	public function get():Dynamic
+	{
+		return createInstance(typeName, binding);
 	}
 }
