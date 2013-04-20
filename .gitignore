@@ -1,2 +1,5 @@
-bin
+build
 unject.zip
+test/ExampleTest.hx
+test/TestMain.hx
+test/TestSuite.hx

@@ -1,42 +1,46 @@
 package unject;
 
 import haxe.rtti.Infos;
-import unject.type.URtti;
-import utest.Assert;
-import utest.Runner;
-import utest.ui.Report;
 
-class TestModules
+import massive.munit.Assert;
+
+import unject.type.URtti;
+
+class ModulesTest
 {
-	public static function addTests(runner : Runner)
+	var kernel:IKernel;
+
+	private inline function assertRaises(test:Void->Void, ?type:Class<Dynamic>)
 	{
-		runner.addCase(new TestModules());
+		try
+		{
+			test();
+			Assert.fail("Should have thrown" + (type == null ? "" : " a " + type));
+		}
+		catch (e:Dynamic)
+		{
+			if (type != null)
+			{
+				Assert.isType(e, type);
+			}
+		}
 	}
-	
-	public static function main()
-	{
-		var runner = new Runner();
-		addTests(runner);
-		Report.create(runner);
-		runner.run();
-	}
-	
-	var kernel : IKernel;
-	
-	public function new();
-	
+
+	@Before
 	public function setup()
 	{
 		kernel = new StandardKernel([new TestModule()]);
 	}
-	
+
+	@Test	
 	public function testModuleLoad()
 	{
 		var samurai = kernel.get(Samurai);
 		
-		Assert.equals("Chopped the evildoers in half.", samurai.attack("the evildoers"));
+		Assert.areEqual("Chopped the evildoers in half.", samurai.attack("the evildoers"));
 	}
 
+	@Test	
 	public function testNoInfos()
 	{
 		var k = this.kernel;		
@@ -44,33 +48,36 @@ class TestModules
 		
 		// Neko is behaving best and won't accept a class without a constructor.
 		#if neko
-		Assert.raises(function() { trace(k.get(NoInfos)); }, String);
+		assertRaises(function() { trace(k.get(NoInfos)); }, String);
 		#else
 		Assert.isTrue(Std.is(k.get(NoInfos), NoInfos));
 		#end
 	}
 	
+	@Test	
 	public function testNoConstructor()
 	{
 		var k = this.kernel;
 		
 		k.bind(NoConstructor, NoConstructor);
-		Assert.raises(function() { k.get(NoConstructor); }, String);
+		assertRaises(function() { k.get(NoConstructor); }, String);
 	}
 	
+	@Test	
 	public function testNoMappingNoConstructor()
 	{
 		var kernel = this.kernel;
 		
-		Assert.equals("Chopped all enemies in half.", kernel.get(Sword).hit("all enemies"));
+		Assert.areEqual("Chopped all enemies in half.", kernel.get(Sword).hit("all enemies"));
 	}
 	
+	@Test	
 	public function testNoMappingInConstructor()
 	{
 		var k = this.kernel;
 		
-		#if !js
-		Assert.raises(function() { k.get(Japan); }, String);
+		#if !(js || flash8)
+		assertRaises(function() { k.get(Japan); }, String);
 		#else
 		// Javascript manages to resolve this because of its default values.
 		Assert.isTrue(Std.is(k.get(Japan), Japan));
@@ -78,27 +85,31 @@ class TestModules
 		#end
 	}
 	
+	@Test	
 	public function testMappingToSelf()
 	{
 		var ninja = kernel.get(Ninja);
 		
-		Assert.equals("Throws a fireball into the air.", ninja.doMagic());
-		Assert.equals("Chopped the ronin in half. (Sneaky)", ninja.sneakAttack("the ronin"));
+		Assert.areEqual("Throws a fireball into the air.", ninja.doMagic());
+		Assert.areEqual("Chopped the ronin in half. (Sneaky)", ninja.sneakAttack("the ronin"));
 	}
 	
+	@Test	
 	public function testWithParameter()
 	{
 		var katana = kernel.get(Katana);
-		Assert.equals(100, katana.sharpness);
-		Assert.equals(true, katana.used);
+		Assert.areEqual(100, katana.sharpness);
+		Assert.areEqual(true, katana.used);
 	}
 	
+	@Test	
 	public function testWithUnBoundParameter()
 	{
 		var k = this.kernel;
-		Assert.raises(function() { trace(k.get(Wakizachi).sharpness); }, String);
+		assertRaises(function() { trace(k.get(Wakizachi).sharpness); }, String);
 	}
 
+	@Test	
 	public function testGetInterface()
 	{
 		// This also tests autobinding since Fireball has a parameterless constructor.
@@ -106,15 +117,17 @@ class TestModules
 		Assert.isTrue(Std.is(magic, Fireball));
 	}
 	
+	@Test	
 	public function testSingletonScope()
 	{
 		var n1 = kernel.get(Ninja);
 		var n2 = kernel.get(Ninja);
 
-		Assert.notEquals(n1, n2);
-		Assert.equals(n1.magic, n2.magic);
+		Assert.areNotEqual(n1, n2);
+		Assert.areEqual(n1.magic, n2.magic);
 	}
 	
+	@Test	
 	public function testAutoBindingFailing()
 	{
 		var k = this.kernel;		
@@ -123,13 +136,13 @@ class TestModules
 		// Flash and js manages to resolve this because of their default value handling.
 		// Other platforms will complain on not enough constructor parameters.
 		#if (js || flash)
-		Assert.is(k.get(IWeapon), MagicSword);
-		Assert.is(k.get(MagicSword), MagicSword);
+		Assert.isType(k.get(IWeapon), MagicSword);
+		Assert.isType(k.get(MagicSword), MagicSword);
 		#else
-		Assert.raises(function() { k.get(IWeapon); }, String);
-		Assert.raises(function() { k.get(MagicSword); }, String);
+		assertRaises(function() { k.get(IWeapon); }, String);
+		assertRaises(function() { k.get(MagicSword); }, String);
 		#end
-	}	
+	}
 }
 
 ///// Test classes ////////////////////////////////
@@ -242,7 +255,7 @@ interface IMagic implements Infos
 
 class Fireball implements IMagic, implements Infos
 {
-	public function new();
+	public function new() {}
 	
 	public function castSpell()
 	{
@@ -252,7 +265,7 @@ class Fireball implements IMagic, implements Infos
 
 class Sword implements IWeapon, implements Infos
 {
-	public function new();
+	public function new() {}
 	
 	public function hit(target : String)
 	{
@@ -262,7 +275,7 @@ class Sword implements IWeapon, implements Infos
 
 class MagicSword implements IWeapon
 {
-	public function new(boundSpell : IMagic);
+	public function new(boundSpell : IMagic) {}
 	
 	public function hit(target : String)
 	{

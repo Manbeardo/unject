@@ -16,7 +16,14 @@ class URtti
 		}
 		
 		var name = Type.getClassName(cast c);
-		return name == "Int" || name == "Float" || name == "String";
+		return false
+			|| name == "Int"
+			|| name == "Float"
+			|| name == "String"
+#if flash9
+			|| name == "Bool"
+#end
+		;
 	}
 	
 	public static function typeName(type : CType, opt : Bool) : String 

@@ -1,0 +1,6 @@
+version=2.0.0
+src=test
+bin=build/munit-work
+report=build/munit-report
+hxml=test.hxml
+coveragePackages=unject
