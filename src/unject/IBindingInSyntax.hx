@@ -5,7 +5,7 @@ package unject;
  * @author Andreas Soderlund
  */
 
-interface IBindingInSyntax 
+interface IBindingInSyntax
 {
 	/// <summary>
 	/// Indicates that only a single instance of the binding should be created, and then

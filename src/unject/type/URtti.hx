@@ -1,5 +1,5 @@
 package unject.type;
-        
+
 import haxe.rtti.CType;
 
 class URtti
@@ -7,14 +7,14 @@ class URtti
 	public static function isValueType(c : Dynamic)
 	{
 		if (!Std.is(c, Class))
-		{			
+		{
 			switch(Type.typeof(c))
 			{
-				case TClass(cls): c = cls;				
+				case TClass(cls): c = cls;
 				default: return true;
 			}
 		}
-		
+
 		var name = Type.getClassName(cast c);
 		return false
 			|| name == "Int"
@@ -25,24 +25,24 @@ class URtti
 #end
 		;
 	}
-	
-	public static function typeName(type : CType, opt : Bool) : String 
+
+	public static function typeName(type : CType, opt : Bool) : String
 	{
-		switch(type) 
+		switch(type)
 		{
 			case CFunction(_,_):
 				return opt ? "Null<function>" : "function";
 			case CUnknown:
 				return opt ? "Null<unknown>" : "unknown";
 			case CAnonymous(_), CDynamic(_):
-				return opt ? "Null<Dynamic>" : "Dynamic"; 
+				return opt ? "Null<Dynamic>" : "Dynamic";
 			case CTypedef(name, params):
 				if(name == "Null")
-				{                
+				{
 					if(opt)
 					{
 						var t = name;
-						if(params != null && params.length > 0) 
+						if(params != null && params.length > 0)
 						{
 							var types = [];
 							for(p in params)
@@ -62,11 +62,11 @@ class URtti
 							types.push(typeName(p, false));
 						t += '<'+types.join(',')+'>';
 					}
-					return opt ? 'Null<'+t+'>' : t;	
+					return opt ? 'Null<'+t+'>' : t;
 				}
 			case CEnum(name, params), CClass(name, params):
 				var t = name;
-				if(params != null && params.length > 0) 
+				if(params != null && params.length > 0)
 				{
 					var types = [];
 					for(p in params)
@@ -75,19 +75,19 @@ class URtti
 				}
 				return opt ? 'Null<'+t+'>' : t;
 		}
-	}       
-	
+	}
+
 	public static function methodArguments(field : ClassField)
 	{
 		switch(field.type)
 		{
 			case CFunction(args, _):
-			    return args;
+				return args;
 			default:
 				return null;
 		}
-	}  
-	
+	}
+
 	public static function methodReturnType(field : ClassField)
 	{
 		switch(field.type)
@@ -98,7 +98,7 @@ class URtti
 				return null;
 		}
 	}
-	
+
 	public static function argumentAcceptNull(arg : {name : String, opt : Bool, t : CType})
 	{
 		if(arg.opt)
@@ -111,24 +111,24 @@ class URtti
 				return false;
 		}
 	}
-	
+
 	public static function getClassFields(cls : Class<Dynamic>)
 	{
 		return unifyFields(getClassDef(cls));
 	}
 
-	public static function unifyFields(cls : Classdef, ?h : Hash<ClassField>) : Hash<ClassField> 
+	public static function unifyFields(cls : Classdef, ?h : Hash<ClassField>) : Hash<ClassField>
 	{
-		if(h == null) 
+		if(h == null)
 			h = new Hash();
 		for(f in cls.fields)
 			if(!h.exists(f.name))
 				h.set(f.name, f);
 		var parent = cls.superClass;
-		if(parent != null) 
-		{		
+		if(parent != null)
+		{
 			var pcls = Type.resolveClass(parent.path);
-			
+
 			#if !cpp
 			var rtti = untyped pcls.__rtti;
 			#else
@@ -136,7 +136,7 @@ class URtti
 			#end
 
 			var x = Xml.parse(rtti).firstElement();
-			switch(new haxe.rtti.XmlParser().processElement(x)) 
+			switch(new haxe.rtti.XmlParser().processElement(x))
 			{
 				case TClassdecl(c):
 			   		unifyFields(c, h);
@@ -146,7 +146,7 @@ class URtti
 		}
 		return h;
 	}
-    
+
 	public static function hasInfo(cls : Class<Dynamic>) : Bool
 	{
 		#if !cpp
@@ -163,26 +163,26 @@ class URtti
 		#else
 		var rtti = Reflect.field(cls, "__rtti");
 		#end
-		
+
 		var x = Xml.parse(rtti).firstElement();
 		var infos = new haxe.rtti.XmlParser().processElement(x);
 
 		var cd;
-		switch(infos) 
+		switch(infos)
 		{
-			case TClassdecl(c): 
+			case TClassdecl(c):
 				cd = c;
-			default: 
+			default:
 				throw "Not a class!";
 		}
 		return cd;
 	}
-	
-	public static function isMethod(field : ClassField) 
+
+	public static function isMethod(field : ClassField)
 	{
 		return switch(field.type)
 		{
-			case CFunction(_, _): true; 
+			case CFunction(_, _): true;
 			default: false;
 		}
 	}

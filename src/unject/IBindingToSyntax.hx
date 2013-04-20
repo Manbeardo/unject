@@ -5,7 +5,7 @@ package unject;
  * @author Andreas Soderlund
  */
 
-interface IBindingToSyntax 
+interface IBindingToSyntax
 {
 	function to(to : Class<Dynamic>) : IBindingWithInSyntax;
 	function toSelf() : IBindingWithInSyntax;

@@ -37,7 +37,7 @@ class StandardKernel implements IKernel
 		//this.modules = new Array<IUnjectModule>();
 		this.constructors = new Hash<List<BindingArgument>>();
 		this.parameters = new Hash<Hash<Dynamic>>();
-		
+
 		for (m in modules)
 		{
 			if (!Std.is(m, IUnjectModule))
@@ -52,28 +52,28 @@ class StandardKernel implements IKernel
 			#end
 
 			module.load();
-			
+
 			//this.modules.push(module);
-		}		
+		}
 	}
-	
-	public function get<T>(type : Class<T>) : T 
+
+	public function get<T>(type : Class<T>) : T
 	{
 		/*
 		var typeName = Type.getClassName(type);
 		if (!bindings.exists(typeName))
 			throw typeName + " has not been bound to any class.";
 		*/
-			
+
 		return internalGet(type);
 	}
 
-	function internalGet<T>(type : Class<T>) : T 
+	function internalGet<T>(type : Class<T>) : T
 	{
 		var typeName = Type.getClassName(type);
 		var binding = bindings.exists(typeName) ? bindings.get(typeName) : type;
 		var scope = scopes.exists(typeName) ? scopes.get(typeName) : Scope.transient;
-		
+
 		var self = this;
 		var instance = function()
 		{
@@ -100,24 +100,24 @@ class StandardKernel implements IKernel
 				}
 			}
 		};
-		
+
 		return switch(scope)
 		{
 			case transient:
 				instance();
-				
+
 			case singleton:
 				if (!singletons.exists(typeName))
 					singletons.set(typeName, instance());
-				
+
 				singletons.get(typeName);
 		}
 	}
-	
+
 	function resolveConstructorParameters(type : Class<Dynamic>) : Array<Dynamic>
 	{
 		var typeName = Type.getClassName(type);
-		
+
 		if (!constructors.exists(typeName))
 			constructors.set(typeName, getConstructorParams(type));
 
@@ -135,17 +135,17 @@ class StandardKernel implements IKernel
 				throw "No binding found for parameter '" + a.name + "' on class " + typeName;
 		}));
 	}
-	
+
 	function getParameter(typeName : String, parameterName : String)
 	{
 		return parameters.get(typeName).get(parameterName);
 	}
-	
+
 	function hasParameter(typeName : String, parameterName : String)
 	{
 		return parameters.exists(typeName) && parameters.get(typeName).exists(parameterName);
 	}
-	
+
 	function getConstructorParams(type : Class<Dynamic>) : List<BindingArgument>
 	{
 		//trace("Get constructor params for " + Type.getClassName(type));
@@ -155,51 +155,51 @@ class StandardKernel implements IKernel
 			return new List<BindingArgument>();
 
 		var fields = URtti.getClassFields(type);
-		
+
 		if (!fields.exists("new"))
 			throw "No constructor found on class " + Type.getClassName(type);
-						
+
 		var self = this;
-		
+
 		return Lambda.map(URtti.methodArguments(fields.get("new")), function(arg : RttiArgument) {
 			switch(arg.t)
 			{
 				case CClass(name, params), CEnum(name, params):
 					var resolved = Type.resolveClass(name);
-					
+
 					#if php
 					// Haxe/PHP cannot resolve interfaces, so a workaround is needed.
 					if (resolved == null)
 						resolved = untyped __call__("_hx_qtype", name);
 					#end
-					
+
 					//trace("Resolved type: " + name);
 					return { type: resolved, name: arg.name };
-					
+
 				default:
 					throw "Parameter type not supported: " + arg.t;
 			}
 		});
 	}
-	
+
 	public function bind(type : Class<Dynamic>, to : Class<Dynamic>)
 	{
 		var typeName = Type.getClassName(type);
-		
+
 		bindings.set(typeName, to);
 	}
-	
+
 	public function setParameter(type : Class<Dynamic>, name : String, value : Dynamic)
 	{
 		var typeName = Type.getClassName(type);
-		
+
 		if (!parameters.exists(typeName))
 			parameters.set(typeName, new Hash<Dynamic>());
-		
-		//trace("Parameter " + name + " for " + typeName + " set to " + value);			
+
+		//trace("Parameter " + name + " for " + typeName + " set to " + value);
 		parameters.get(typeName).set(name, value);
 	}
-	
+
 	public function setScope(type : Class<Dynamic>, scope : Scope)
 	{
 		scopes.set(Type.getClassName(type), scope);

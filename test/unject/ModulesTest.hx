@@ -32,20 +32,20 @@ class ModulesTest
 		kernel = new StandardKernel([new TestModule()]);
 	}
 
-	@Test	
+	@Test
 	public function testModuleLoad()
 	{
 		var samurai = kernel.get(Samurai);
-		
+
 		Assert.areEqual("Chopped the evildoers in half.", samurai.attack("the evildoers"));
 	}
 
-	@Test	
+	@Test
 	public function testNoInfos()
 	{
-		var k = this.kernel;		
+		var k = this.kernel;
 		k.bind(NoInfos, NoInfos);
-		
+
 		// Neko is behaving best and won't accept a class without a constructor.
 		#if neko
 		assertRaises(function() { trace(k.get(NoInfos)); }, String);
@@ -53,29 +53,29 @@ class ModulesTest
 		Assert.isTrue(Std.is(k.get(NoInfos), NoInfos));
 		#end
 	}
-	
-	@Test	
+
+	@Test
 	public function testNoConstructor()
 	{
 		var k = this.kernel;
-		
+
 		k.bind(NoConstructor, NoConstructor);
 		assertRaises(function() { k.get(NoConstructor); }, String);
 	}
-	
-	@Test	
+
+	@Test
 	public function testNoMappingNoConstructor()
 	{
 		var kernel = this.kernel;
-		
+
 		Assert.areEqual("Chopped all enemies in half.", kernel.get(Sword).hit("all enemies"));
 	}
-	
-	@Test	
+
+	@Test
 	public function testNoMappingInConstructor()
 	{
 		var k = this.kernel;
-		
+
 		#if !(js || flash8)
 		assertRaises(function() { k.get(Japan); }, String);
 		#else
@@ -84,40 +84,40 @@ class ModulesTest
 		Assert.isTrue(Std.is(k.get(Japan).shogun, IShogun));
 		#end
 	}
-	
-	@Test	
+
+	@Test
 	public function testMappingToSelf()
 	{
 		var ninja = kernel.get(Ninja);
-		
+
 		Assert.areEqual("Throws a fireball into the air.", ninja.doMagic());
 		Assert.areEqual("Chopped the ronin in half. (Sneaky)", ninja.sneakAttack("the ronin"));
 	}
-	
-	@Test	
+
+	@Test
 	public function testWithParameter()
 	{
 		var katana = kernel.get(Katana);
 		Assert.areEqual(100, katana.sharpness);
 		Assert.areEqual(true, katana.used);
 	}
-	
-	@Test	
+
+	@Test
 	public function testWithUnBoundParameter()
 	{
 		var k = this.kernel;
 		assertRaises(function() { trace(k.get(Wakizachi).sharpness); }, String);
 	}
 
-	@Test	
+	@Test
 	public function testGetInterface()
 	{
 		// This also tests autobinding since Fireball has a parameterless constructor.
 		var magic = kernel.get(IMagic);
 		Assert.isTrue(Std.is(magic, Fireball));
 	}
-	
-	@Test	
+
+	@Test
 	public function testSingletonScope()
 	{
 		var n1 = kernel.get(Ninja);
@@ -126,13 +126,13 @@ class ModulesTest
 		Assert.areNotEqual(n1, n2);
 		Assert.areEqual(n1.magic, n2.magic);
 	}
-	
-	@Test	
+
+	@Test
 	public function testAutoBindingFailing()
 	{
-		var k = this.kernel;		
+		var k = this.kernel;
 		k.bind(IWeapon, MagicSword);
-		
+
 		// Flash and js manages to resolve this because of their default value handling.
 		// Other platforms will complain on not enough constructor parameters.
 		#if (js || flash)
@@ -152,13 +152,13 @@ class TestModule extends UnjectModule
 	public override function load()
 	{
 		bind(IWeapon).to(Sword);
-		
+
 		bind(IMagic).to(Fireball).inSingletonScope();
-		
+
 		bind(Ninja).toSelf();
 		bind(Samurai).toSelf();
 		bind(Sword).toSelf();
-		
+
 		bind(Katana).toSelf()
 			.withParameter("sharpness", 100)
 			.withParameter("used", true);
@@ -171,7 +171,7 @@ class NoConstructor implements Infos { }
 class Wakizachi implements Infos
 {
 	public var sharpness(default, null) : Int;
-	
+
 	public function new(sharpness : Int)
 	{
 		this.sharpness = sharpness;
@@ -182,7 +182,7 @@ class Katana implements Infos
 {
 	public var sharpness : Int;
 	public var used : Bool;
-	
+
 	public function new(sharpness : Int, used : Bool)
 	{
 		this.sharpness = sharpness;
@@ -194,18 +194,18 @@ class Ninja implements Infos
 {
 	var weapon : IWeapon;
 	public var magic : IMagic;
-	
+
 	public function new(weapon : IWeapon, magic : IMagic)
 	{
 		this.weapon = weapon;
 		this.magic = magic;
 	}
-	
+
 	public function sneakAttack(target : String)
 	{
 		return weapon.hit(target) + " (Sneaky)";
 	}
-	
+
 	public function doMagic()
 	{
 		return magic.castSpell();
@@ -215,12 +215,12 @@ class Ninja implements Infos
 class Samurai implements Infos
 {
 	var weapon : IWeapon;
-	
+
 	public function new(weapon : IWeapon)
 	{
 		this.weapon = weapon;
 	}
-	
+
 	public function attack(target : String)
 	{
 		return weapon.hit(target);
@@ -236,7 +236,7 @@ interface IShogun
 class Japan implements Infos
 {
 	public var shogun(default, null) : IShogun;
-	
+
 	public function new(shogun : IShogun)
 	{
 		this.shogun = shogun;
@@ -256,17 +256,17 @@ interface IMagic implements Infos
 class Fireball implements IMagic, implements Infos
 {
 	public function new() {}
-	
+
 	public function castSpell()
 	{
 		return "Throws a fireball into the air.";
-	}	
+	}
 }
 
 class Sword implements IWeapon, implements Infos
 {
 	public function new() {}
-	
+
 	public function hit(target : String)
 	{
 		return "Chopped " + target + " in half.";
@@ -276,7 +276,7 @@ class Sword implements IWeapon, implements Infos
 class MagicSword implements IWeapon
 {
 	public function new(boundSpell : IMagic) {}
-	
+
 	public function hit(target : String)
 	{
 		return "Chopped " + target + " in half.";
