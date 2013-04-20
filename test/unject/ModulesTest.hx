@@ -143,6 +143,19 @@ class ModulesTest
 		assertRaises(function() { k.get(MagicSword); }, String);
 		#end
 	}
+
+	@Test
+	public function testBindToInstance()
+	{
+		var k = this.kernel;
+		k.bindToInstance(IWeapon, new Nunchaku());
+
+		var w1 = k.get(IWeapon);
+		var w2 = k.get(IWeapon);
+		Assert.isType(w1, Nunchaku);
+		Assert.isType(w2, Nunchaku);
+		Assert.areEqual(w1, w2);
+	}
 }
 
 ///// Test classes ////////////////////////////////
@@ -280,5 +293,15 @@ class MagicSword implements IWeapon
 	public function hit(target : String)
 	{
 		return "Chopped " + target + " in half.";
+	}
+}
+
+class Nunchaku implements IWeapon
+{
+	public function new() {}
+
+	public function hit(target : String)
+	{
+		return "Broken " + target + " in half.";
 	}
 }

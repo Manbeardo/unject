@@ -156,6 +156,13 @@ class StandardKernel implements IKernel
 		providers.set(typeName, new ConstructorProvider(typeName, to, createInstance));
 	}
 
+	public function bindToInstance(type : Class<Dynamic>, to : Dynamic)
+	{
+		var typeName = Type.getClassName(type);
+
+		providers.set(typeName, new SingletonProvider(to));
+	}
+
 	public function setParameter(type : Class<Dynamic>, name : String, value : Dynamic)
 	{
 		var typeName = Type.getClassName(type);
@@ -215,5 +222,20 @@ private class ConstructorProvider<T> implements Provider<T>
 	public function get():Dynamic
 	{
 		return createInstance(typeName, binding);
+	}
+}
+
+private class SingletonProvider<T> implements Provider<T>
+{
+	var target:T;
+
+	public function new(target:T)
+	{
+		this.target = target;
+	}
+
+	public function get()
+	{
+		return target;
 	}
 }

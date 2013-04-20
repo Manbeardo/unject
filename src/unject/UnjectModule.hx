@@ -42,6 +42,11 @@ class BindTo implements IBindingToSyntax, implements IBindingWithInSyntax
 		return cast(this, IBindingWithInSyntax);
 	}
 
+	public function toInstance(to : Dynamic)
+	{
+		kernel.bindToInstance(type, to);
+	}
+
 	public function withParameter(name : String, value : Dynamic)
 	{
 		kernel.setParameter(type, name, value);
